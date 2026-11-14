@@ -1,0 +1,15 @@
+node_modules/
+dist/
+.tanstack/
+.env
+*.db
+*.db-journal
+
+.vercel
+.env*
+*.db-wal
+*.db-shm
+.output
+
+.env
+node_modules/
