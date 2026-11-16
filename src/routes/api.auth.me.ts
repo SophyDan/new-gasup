@@ -3,7 +3,7 @@ import { clearSession, getSessionUser, safeUser } from '../../lib/auth.mjs'
 
 export const Route = createFileRoute('/api/auth/me')({
   server: { handlers: {
-    GET: async ({request}) => Response.json({user:safeUser(getSessionUser(request))}),
+    GET: async ({request}) => Response.json({user:safeUser(await getSessionUser(request))}),
     DELETE: async () => Response.json({ok:true},{headers:{'Set-Cookie':clearSession()}}),
   } },
 })

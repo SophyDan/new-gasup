@@ -9,7 +9,7 @@ export const Route = createFileRoute('/api/cron/reminders')({
         const secret = process.env.CRON_SECRET || ''
         if (!secret) return Response.json({ error: 'CRON_SECRET is not configured' }, { status: 503 })
         if (request.headers.get('x-cron-secret') !== secret) return Response.json({ error: 'Unauthorized' }, { status: 401 })
-        const due = findDueReminderCustomers(3)
+        const due = await findDueReminderCustomers(3)
         const results = []
         for (const customer of due) {
           const payload = {
@@ -21,11 +21,11 @@ export const Route = createFileRoute('/api/cron/reminders')({
           }
           try {
             await triggerAutomation(payload)
-            recordAutomationLog('REMINDER', undefined, customer.customerId, 'SENT')
+            await recordAutomationLog('REMINDER', undefined, customer.customerId, 'SENT')
             results.push({ customerId: customer.customerId, status: 'SENT' })
           } catch (error) {
             const message = error instanceof Error ? error.message : 'Automation failed'
-            recordAutomationLog('REMINDER', undefined, customer.customerId, 'FAILED', message)
+            await recordAutomationLog('REMINDER', undefined, customer.customerId, 'FAILED', message)
             results.push({ customerId: customer.customerId, status: 'FAILED', error: message })
           }
         }

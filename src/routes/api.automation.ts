@@ -7,11 +7,11 @@ export const Route = createFileRoute('/api/automation')({
   server: {
     handlers: {
       GET: async ({ request }) => {
-        if (getSessionUser(request)?.role !== 'STAFF') return Response.json({ error: 'Staff login required' }, { status: 401 })
-        return Response.json({ logs: listAutomationLogs() })
+        if ((await getSessionUser(request))?.role !== 'STAFF') return Response.json({ error: 'Staff login required' }, { status: 401 })
+        return Response.json({ logs: await listAutomationLogs() })
       },
       POST: async ({ request }) => {
-        if (getSessionUser(request)?.role !== 'STAFF') return Response.json({ error: 'Staff login required' }, { status: 401 })
+        if ((await getSessionUser(request))?.role !== 'STAFF') return Response.json({ error: 'Staff login required' }, { status: 401 })
         const origin = request.headers.get('origin')
         if (origin && new URL(origin).origin !== new URL(request.url).origin) {
           return Response.json({ error: 'Cross-origin request rejected' }, { status: 403 })
@@ -28,17 +28,17 @@ export const Route = createFileRoute('/api/automation')({
         }
 
         try {
-          const orderState = payload.order_id ? prepareOrderAutomation(payload.order_id, payload.type) : null
+          const orderState = payload.order_id ? await prepareOrderAutomation(payload.order_id, payload.type) : null
           if (payload.type === 'READY' && orderState?.readyEmailSentAt) return Response.json({ ok: true, alreadySent: true })
           await triggerAutomation(payload)
-          if (payload.type === 'READY' && orderState) markReadyEmailSent(payload.order_id!)
-          const customerId = payload.order_id ? getAutomationCustomer(payload.order_id) : null
-          recordAutomationLog(payload.type, customerId ? payload.order_id : undefined, customerId, 'SENT')
+          if (payload.type === 'READY' && orderState) await markReadyEmailSent(payload.order_id!)
+          const customerId = payload.order_id ? await getAutomationCustomer(payload.order_id) : null
+          await recordAutomationLog(payload.type, customerId ? payload.order_id : undefined, customerId, 'SENT')
           return Response.json({ ok: true })
         } catch (error) {
           const message = error instanceof Error ? error.message : 'Automation request failed'
-          const customerId = payload.order_id ? getAutomationCustomer(payload.order_id) : null
-          recordAutomationLog(payload.type, customerId ? payload.order_id : undefined, customerId, 'FAILED', message)
+          const customerId = payload.order_id ? await getAutomationCustomer(payload.order_id) : null
+          await recordAutomationLog(payload.type, customerId ? payload.order_id : undefined, customerId, 'FAILED', message)
           return Response.json({ error: message }, { status: 502 })
         }
       },

@@ -10,14 +10,14 @@ export const Route = createFileRoute('/api/auth/staff-login')({
     const input=await request.json().catch(()=>null)
     const email=typeof input?.email==='string'?input.email.trim().toLowerCase():''
     const password=typeof input?.password==='string'?input.password:''
-    const retryAfter=authThrottleSeconds(email)
+    const retryAfter=await authThrottleSeconds(email)
     if(retryAfter) return Response.json({error:'Too many sign-in attempts. Try again later.'},{status:429,headers:{'Retry-After':String(retryAfter)}})
-    if(email!==staffEmail || !timingSafeStringEqual(password,staffPassword)){recordAuthFailure(email);return Response.json({error:'Email or password is incorrect.'},{status:401})}
-    clearAuthFailures(email)
-    let user=getUserByEmail(staffEmail)
+    if(email!==staffEmail || !timingSafeStringEqual(password,staffPassword)){await recordAuthFailure(email);return Response.json({error:'Email or password is incorrect.'},{status:401})}
+    await clearAuthFailures(email)
+    let user=await getUserByEmail(staffEmail)
     if(user && user.role!=='STAFF') return Response.json({error:'This email belongs to a customer account.'},{status:409})
-    if(!user) user=createUser({name:'GasUp Staff',email:staffEmail,phone:'',passwordHash:hashPassword(staffPassword),role:'STAFF'})
-    else updateUserPassword(user.id,hashPassword(staffPassword))
+    if(!user) user=await createUser({name:'GasUp Staff',email:staffEmail,phone:'',passwordHash:hashPassword(staffPassword),role:'STAFF'})
+    else user=await updateUserPassword(user.id,hashPassword(staffPassword))
     return Response.json({user:safeUser(user)},{headers:{'Set-Cookie':issueSession(user)}})
   } } },
 })

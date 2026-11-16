@@ -6,22 +6,22 @@ export const Route = createFileRoute('/api/orders')({
   server: {
     handlers: {
       GET: async ({ request }) => {
-        const user=getSessionUser(request)
-        if(user?.role==='CUSTOMER') return Response.json({orders:mapOrders(listCustomerOrders(user.id))})
+        const user=await getSessionUser(request)
+        if(user?.role==='CUSTOMER') return Response.json({orders:mapOrders(await listCustomerOrders(user.id))})
         if (user?.role !== 'STAFF') return Response.json({ error: 'Login required' }, { status: 401 })
-        return Response.json({ orders:mapOrders(listStaffOrders()) })
+        return Response.json({ orders:mapOrders(await listStaffOrders()) })
       },
       PATCH: async ({ request }) => {
-        if (getSessionUser(request)?.role !== 'STAFF') return Response.json({ error: 'Staff login required' }, { status: 401 })
+        if ((await getSessionUser(request))?.role !== 'STAFF') return Response.json({ error: 'Staff login required' }, { status: 401 })
         const input = await request.json().catch(() => null)
         const allowed = ['PREPARING','READY','OUT_FOR_DELIVERY','COMPLETED','CANCELLED']
         if (!input?.orderId || !allowed.includes(input.status)) return Response.json({ error: 'Invalid order status' }, { status: 400 })
-        return updateOrderStatus(input.orderId,input.status)
+        return await updateOrderStatus(input.orderId,input.status)
           ? Response.json({ ok:true })
           : Response.json({ error:'Order not found' }, { status:404 })
       },
       POST: async ({ request }) => {
-        const user = getSessionUser(request)
+        const user = await getSessionUser(request)
         if (!user || user.role !== 'CUSTOMER') return Response.json({ error: 'Sign in as a customer to place an order' }, { status: 401 })
         const origin = request.headers.get('origin')
         if (origin && new URL(origin).origin !== new URL(request.url).origin) return Response.json({ error: 'Cross-origin request rejected' }, { status: 403 })
@@ -33,7 +33,7 @@ export const Route = createFileRoute('/api/orders')({
           return Response.json({ error: 'Please check the order details and try again' }, { status: 400 })
         }
         try {
-          const order = createOrder({
+          const order = await createOrder({
             customerName: user.name, customerEmail: user.email,
             customerPhone: user.phone, sizeKg: input.sizeKg, quantity: input.quantity,
             fulfilment: input.fulfilment, deliveryAddress: input.deliveryAddress?.trim() || '',

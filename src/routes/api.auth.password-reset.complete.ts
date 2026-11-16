@@ -8,7 +8,7 @@ export const Route = createFileRoute('/api/auth/password-reset/complete')({
     const password=typeof input?.password==='string'?input.password:''
     if(token.length<32 || token.length>128 || password.length<10 || password.length>256) return Response.json({error:'The link or new password is invalid.'},{status:400})
     try {
-      if(!completePasswordReset(token,password)) return Response.json({error:'This reset link is invalid or expired.'},{status:400})
+      if(!await completePasswordReset(token,password)) return Response.json({error:'This reset link is invalid or expired.'},{status:400})
       return Response.json({ok:true})
     } catch { return Response.json({error:'Could not reset the password.'},{status:500}) }
   } } },

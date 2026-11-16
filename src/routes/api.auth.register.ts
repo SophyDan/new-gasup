@@ -12,11 +12,11 @@ export const Route = createFileRoute('/api/auth/register')({
     if(name.length<2 || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) || phone.replace(/\D/g,'').length<7 || password.length<10 || password.length>256) {
       return Response.json({error:'Enter your name, a valid email and phone, and a password with at least 10 characters.'},{status:400})
     }
-    const existing=getUserByEmail(email)
+    const existing=await getUserByEmail(email)
     if(existing && (existing.role!=='CUSTOMER' || existing.passwordHash)) return Response.json({error:'An account with that email already exists.'},{status:409})
     try {
       const passwordHash=hashPassword(password)
-      const user=existing ? activateDemoCustomer(existing.id,{name,phone,passwordHash}) : createUser({name,email,phone,passwordHash,role:'CUSTOMER'})
+      const user=existing ? await activateDemoCustomer(existing.id,{name,phone,passwordHash}) : await createUser({name,email,phone,passwordHash,role:'CUSTOMER'})
       return Response.json({user:safeUser(user)},{headers:{'Set-Cookie':issueSession(user)}})
     } catch { return Response.json({error:'Could not create your account.'},{status:500}) }
   } } },

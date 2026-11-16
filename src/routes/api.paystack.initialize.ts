@@ -17,14 +17,14 @@ export const Route = createFileRoute('/api/paystack/initialize')({
         }
         if (!secret.startsWith('sk_test_') || !publicKey.startsWith('pk_test_')) return Response.json({ error: 'Matching Paystack test keys are not configured' }, { status: 503 })
         const { orderId } = await request.json().catch(() => ({}))
-        const user=getSessionUser(request)
+        const user=await getSessionUser(request)
         if(user?.role!=='CUSTOMER') return Response.json({error:'Customer login required'},{status:401})
-        const order = typeof orderId === 'string' ? getOrderForPayment(orderId) : null
+        const order = typeof orderId === 'string' ? await getOrderForPayment(orderId) : null
         if (!order || order.customerId!==user.id || order.status !== 'PENDING') return Response.json({ error: 'Order cannot be paid' }, { status: 404 })
 
         const reference = `GASUP-${order.id}-${Date.now()}`
         const amount = Math.round(order.totalPrice * 100)
-        savePendingPayment(order.id, reference, amount)
+        await savePendingPayment(order.id, reference, amount)
         try {
           const response = await fetch('https://api.paystack.co/transaction/initialize', {
             method: 'POST',
@@ -39,7 +39,7 @@ export const Route = createFileRoute('/api/paystack/initialize')({
           if (!response.ok || !result?.data?.authorization_url) throw new Error(result?.message || 'Paystack could not initialize checkout')
           return Response.json({ authorizationUrl: result.data.authorization_url, reference })
         } catch (error) {
-          failPayment(reference)
+          await failPayment(reference)
           const message = paystackErrorMessage(error, 'Paystack initialization failed')
           return Response.json({ error: message }, { status: 502 })
         }

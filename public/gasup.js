@@ -249,7 +249,7 @@ function openAuthModal(mode='login'){
   const staff=mode==='staff', register=mode==='register', resetRequest=mode==='reset-request', resetComplete=mode==='reset-complete';
   openModal(`<div class="mh" style="padding:16px 0 0"><h3>${staff?'Staff sign-in':register?'Create your GasUp account':resetRequest?'Reset your password':resetComplete?'Choose a new password':'Sign in to GasUp'}</h3><button class="x" data-action="close-modal">×</button></div>
     ${register?`<div class="field"><label>Full name</label><input class="input" id="auth-name" value="${esc(draft.name)}" autocomplete="name"></div><div class="field"><label>Phone</label><input class="input" id="auth-phone" value="${esc(draft.phone)}" autocomplete="tel"></div>`:''}
-    ${staff||resetComplete?'':`<div class="field"><label>Email</label><input class="input" id="auth-email" type="email" value="${esc(draft.email || currentUser?.email || '')}" autocomplete="email"></div>`}
+    ${resetComplete?'':`<div class="field"><label>Email</label><input class="input" id="auth-email" type="email" value="${esc(draft.email || currentUser?.email || '')}" autocomplete="email"></div>`}
     ${resetRequest?'':`<div class="field"><label>${resetComplete?'New password':'Password'}${register||resetComplete?' (at least 10 characters)':''}</label><input class="input" id="auth-password" type="password" autocomplete="${register||resetComplete?'new-password':'current-password'}"></div>`}
     <div class="err" id="auth-error"></div><button class="btn primary block" style="margin-top:10px" data-action="auth-submit">${staff?'Sign in as staff':register?'Create account':resetRequest?'Send reset link':resetComplete?'Save new password':'Sign in'}</button>
     ${staff||resetRequest||resetComplete?'':`${!register?`<button class="btn ghost block" style="margin-top:7px" data-action="auth-reset">Forgot password?</button>`:''}<button class="btn ghost block" style="margin-top:7px" data-action="auth-switch">${register?'Already have an account? Sign in':'New to GasUp? Create an account'}</button>`}`);
@@ -813,7 +813,7 @@ document.addEventListener("click", async e => {
   }
   if(a === 'auth-submit'){
     const emailNode=document.getElementById('auth-email'), passwordNode=document.getElementById('auth-password');
-    const input={email:emailNode?.value.trim() || ''};
+    const input={email:authMode==='staff'?(emailNode?.value || ''):(emailNode?.value.trim() || '')};
     if(passwordNode)input.password=passwordNode.value;
     if(authMode==='register'){input.name=document.getElementById('auth-name').value.trim();input.phone=document.getElementById('auth-phone').value.trim();}
     if(authMode==='reset-complete')input.token=resetToken;

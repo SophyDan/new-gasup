@@ -13,3 +13,4 @@ dist/
 
 .env
 node_modules/
+.neon
